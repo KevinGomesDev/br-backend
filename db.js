@@ -1,12 +1,14 @@
-import pg from 'pg';
-import dotenv from 'dotenv';
+import pg from "pg";
+import fs from "fs";
+import dotenv from "dotenv";
 
 const { Pool } = pg;
 
-dotenv.config();
+const envFile = fs.existsSync(".env.local") ? ".env.local" : ".env";
+dotenv.config({ path: envFile });
 
 const pool = new Pool({
-  connectionString: process.env.CONNECTION_STRING
+  connectionString: process.env.CONNECTION_STRING,
 });
 
 async function connect() {

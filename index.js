@@ -1,9 +1,12 @@
 import express from "express";
-import dotenv from "dotenv";
 import { connect } from "./db.js";
 import kingdomRoutes from "./routes/kingdomRoutes.js";
+import fs from "fs";
+import dotenv from "dotenv";
 
-dotenv.config();
+const envFile = fs.existsSync(".env.local") ? ".env.local" : ".env";
+dotenv.config({ path: envFile });
+
 const app = express();
 const port = process.env.PORT || 3000;
 
