@@ -1,4 +1,4 @@
-import { getKingdoms } from "../models/kingdomModel.js";
+import { getKingdoms, createKingdom } from "../models/kingdomModel.js";
 
 async function listKingdoms(req, res) {
   try {
