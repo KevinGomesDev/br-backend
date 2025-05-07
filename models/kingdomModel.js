@@ -6,4 +6,12 @@ async function getKingdoms() {
     return res.rows;
 };
 
-export { getKingdoms };
+export async function createKingdom({ name, description, type }) {
+  const db = await connect();
+  const query = 'INSERT INTO kingdoms (name, description, type) VALUES ($1, $2, $3) RETURNING *';
+  const values = [name, description, type];
+  const result = await db.query(query, values);
+  return result.rows[0];
+}
+
+export { getKingdoms, createKingdom };
