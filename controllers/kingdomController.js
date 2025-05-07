@@ -1,6 +1,6 @@
 import { getKingdoms } from "../models/kingdomModel.js";
 
-export async function listKingdoms(req, res) {
+async function listKingdoms(req, res) {
   try {
     const kingdoms = await getKingdoms();
     res.status(200).json(kingdoms);
@@ -10,7 +10,7 @@ export async function listKingdoms(req, res) {
   }
 }
 
-export async function addKingdom(req, res) {
+async function addKingdom(req, res) {
   const { name, description, type } = req.body;
 
   const validTypes = [
@@ -48,3 +48,5 @@ export async function addKingdom(req, res) {
     res.status(500).json({ error: "Erro ao criar reino" });
   }
 }
+
+export { listKingdoms, addKingdom };
