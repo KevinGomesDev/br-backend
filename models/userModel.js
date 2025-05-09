@@ -8,6 +8,15 @@ async function findUserByEmail(email) {
   return result.rows[0];
 }
 
+async function findUserById(id) {
+  const db = await connect();
+  const res = await db.query(
+    "SELECT id, name, email FROM users WHERE id = $1",
+    [id]
+  );
+  return res.rows[0];
+}
+
 async function createUser({ name, email, password }) {
   const db = await connect();
   const result = await db.query(
@@ -17,4 +26,4 @@ async function createUser({ name, email, password }) {
   return result.rows[0];
 }
 
-export { findUserByEmail, createUser };
+export { findUserByEmail, createUser, findUserById };

@@ -1,6 +1,23 @@
 import bcrypt from "bcrypt";
-import { findUserByEmail, createUser } from "../models/userModel.js";
 import jwt from "jsonwebtoken";
+import {
+  findUserByEmail,
+  createUser,
+  findUserById,
+} from "../models/userModel.js";
+
+function generateToken(payload) {
+  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
+}
+
+function setAuthCookie(res, token) {
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 60 * 60 * 1000,
+  });
+}
 
 async function login(req, res) {
   const { email, password } = req.body;
@@ -11,42 +28,26 @@ async function login(req, res) {
 
   try {
     const user = await findUserByEmail(email);
-
     if (!user) {
       return res.status(401).json({ message: "Credenciais inválidas." });
     }
 
-    const senhaCorreta = await bcrypt.compare(password, user.password);
-
-    if (!senhaCorreta) {
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
       return res.status(401).json({ message: "Credenciais inválidas." });
     }
 
-    // Por enquanto só retornamos sucesso (sem token ainda)
-    // Gera token com id e email do usuário
-    const token = jwt.sign(
-      { id: user.id, email: user.email },
-      process.env.JWT_SECRET, // Adicione no .env
-      { expiresIn: "1h" }
-    );
+    const token = generateToken({ id: user.id, email: user.email });
+    setAuthCookie(res, token);
 
-    // Envia como cookie HTTP-only
-    res
-      .cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production", // em prod, só HTTPS
-        sameSite: "strict",
-        maxAge: 60 * 60 * 1000, // 1 hora
-      })
-      .status(200)
-      .json({
-        message: "Login bem-sucedido.",
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-        },
-      });
+    res.status(200).json({
+      message: "Login bem-sucedido.",
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+    });
   } catch (error) {
     console.error("Erro no login:", error);
     res.status(500).json({ message: "Erro interno do servidor." });
@@ -69,9 +70,19 @@ async function register(req, res) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    await createUser({ name, email, password: hashedPassword });
+    const newUser = await createUser({ name, email, password: hashedPassword });
 
-    res.status(201).json({ message: "Usuário criado com sucesso." });
+    const token = generateToken({ id: newUser.id, email: newUser.email });
+    setAuthCookie(res, token);
+
+    res.status(201).json({
+      message: "Usuário criado e autenticado com sucesso.",
+      user: {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+      },
+    });
   } catch (error) {
     console.error("Erro ao registrar:", error);
     res.status(500).json({ message: "Erro interno do servidor." });
@@ -79,8 +90,26 @@ async function register(req, res) {
 }
 
 async function me(req, res) {
-  const { id, email } = req.user;
-  res.json({ id, email });
+  try {
+    const user = await findUserById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "Usuário não encontrado." });
+    }
+
+    const { id, name, email } = user;
+    res.json({ id, name, email });
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao buscar usuário." });
+  }
 }
 
-export { register, login, me };
+function logout(req, res) {
+  res.clearCookie("token", {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+  });
+  res.status(200).json({ message: "Logout realizado com sucesso." });
+}
+
+export { login, register, me, logout };

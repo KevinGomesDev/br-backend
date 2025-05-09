@@ -12,13 +12,21 @@ dotenv.config({ path: envFile });
 
 const app = express();
 const port = process.env.PORT || 3000;
+const allowedOrigins = [process.env.CLIENT_URL];
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Não permitido por CORS"));
+      }
+    },
     credentials: true,
   })
 );
+
 app.use(express.json());
 app.use(cookieParser());
 
