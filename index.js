@@ -12,7 +12,10 @@ dotenv.config({ path: envFile });
 
 const app = express();
 const port = process.env.PORT || 3000;
-const allowedOrigins = [process.env.CLIENT_URL];
+const allowedOrigins = [
+  process.env.CLIENT_URL_ONE,
+  process.env.CLIENT_URL_TWO,
+].filter(Boolean);
 
 app.use(
   cors({
@@ -20,6 +23,7 @@ app.use(
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
+        console.warn("CORS bloqueado para:", origin);
         callback(new Error("Não permitido por CORS"));
       }
     },
