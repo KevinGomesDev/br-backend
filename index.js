@@ -6,27 +6,23 @@ import authRoutes from "./routes/authRoutes.js";
 import fs from "fs";
 import dotenv from "dotenv";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const envFile = fs.existsSync(".env.local") ? ".env.local" : ".env";
 dotenv.config({ path: envFile });
 
 const app = express();
 const port = process.env.PORT || 3000;
-const allowedOrigins = [
-  process.env.CLIENT_URL_ONE,
-  process.env.CLIENT_URL_TWO,
-].filter(Boolean);
 
+// Corrigir __dirname em módulos ES
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// CORS simples (mesma origem)
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.warn("CORS bloqueado para:", origin);
-        callback(new Error("Não permitido por CORS"));
-      }
-    },
+    origin: true, // permite a mesma origem
     credentials: true,
   })
 );
@@ -34,9 +30,16 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-// Rotas
+// Rotas API
 app.use("/kingdom", kingdomRoutes);
 app.use("/auth", authRoutes);
+
+// Servir o frontend
+app.use(express.static(path.join(__dirname, "client/dist")));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "client/dist", "index.html"));
+});
 
 // Inicialização
 connect()
